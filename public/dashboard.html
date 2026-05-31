@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة تحكم البوت</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a26;
+    --border: #2a2a3e; --accent: #6c63ff; --accent2: #ff6584;
+    --accent3: #43e97b; --text: #e8e8f0; --text-muted: #6b6b8a;
+    --fb: #1877f2; --ig: #e1306c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Cairo', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; direction: rtl; }
+  body::before { content: ''; position: fixed; top: -50%; right: -20%; width: 600px; height: 600px; background: radial-gradient(circle, rgba(108,99,255,0.08) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+  .sidebar { position: fixed; right: 0; top: 0; width: 260px; height: 100vh; background: var(--surface); border-left: 1px solid var(--border); padding: 28px 20px; display: flex; flex-direction: column; gap: 8px; z-index: 100; }
+  .logo { font-size: 22px; font-weight: 900; background: linear-gradient(135deg, var(--accent), var(--accent2)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 32px; padding-right: 8px; }
+  .logo span { font-weight: 300; font-size: 13px; display: block; -webkit-text-fill-color: var(--text-muted); margin-top: 2px; }
+  .nav-item { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; cursor: pointer; transition: all 0.2s; font-size: 14px; font-weight: 600; color: var(--text-muted); border: 1px solid transparent; }
+  .nav-item:hover { background: var(--surface2); color: var(--text); }
+  .nav-item.active { background: rgba(108,99,255,0.15); color: var(--accent); border-color: rgba(108,99,255,0.3); }
+  .nav-item .icon { font-size: 18px; width: 24px; text-align: center; }
+  .bot-status { margin-top: auto; background: var(--surface2); border-radius: 14px; padding: 16px; border: 1px solid var(--border); }
+  .status-row { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .status-label { font-size: 13px; font-weight: 700; }
+  .toggle { width: 44px; height: 24px; background: var(--border); border-radius: 12px; cursor: pointer; position: relative; transition: background 0.3s; }
+  .toggle.on { background: var(--accent3); }
+  .toggle::after { content: ''; position: absolute; width: 18px; height: 18px; background: white; border-radius: 50%; top: 3px; right: 3px; transition: transform 0.3s; }
+  .toggle.on::after { transform: translateX(-20px); }
+  .platform-pills { display: flex; gap: 8px; flex-wrap: wrap; }
+  .pill { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; display: flex; align-items: center; gap: 5px; }
+  .pill.fb { background: rgba(24,119,242,0.15); color: var(--fb); border: 1px solid rgba(24,119,242,0.3); }
+  .pill.ig { background: rgba(225,48,108,0.15); color: var(--ig); border: 1px solid rgba(225,48,108,0.3); }
+  .main { margin-right: 260px; padding: 36px; position: relative; z-index: 1; }
+  .page-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 32px; }
+  .page-title { font-size: 26px; font-weight: 900; }
+  .page-title span { color: var(--text-muted); font-weight: 300; font-size: 14px; display: block; margin-top: 4px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 24px; position: relative; overflow: hidden; transition: transform 0.2s; }
+  .stat-card:hover { transform: translateY(-2px); }
+  .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+  .stat-card:nth-child(1)::before { background: linear-gradient(90deg, var(--accent), var(--accent2)); }
+  .stat-card:nth-child(2)::before { background: linear-gradient(90deg, var(--fb), #0dccea); }
+  .stat-card:nth-child(3)::before { background: linear-gradient(90deg, var(--ig), #f56040); }
+  .stat-value { font-size: 38px; font-weight: 900; margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--text-muted); font-weight: 600; }
+  .stat-icon { position: absolute; top: 20px; left: 20px; font-size: 28px; opacity: 0.15; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .section-title { font-size: 18px; font-weight: 700; }
+  .btn { padding: 10px 20px; border-radius: 10px; border: none; cursor: pointer; font-family: 'Cairo', sans-serif; font-weight: 700; font-size: 13px; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+  .btn-primary { background: var(--accent); color: white; }
+  .btn-primary:hover { background: #5a52e0; transform: translateY(-1px); }
+  .btn-danger { background: rgba(255,101,132,0.15); color: var(--accent2); border: 1px solid rgba(255,101,132,0.3); }
+  .btn-ghost { background: var(--surface2); color: var(--text-muted); border: 1px solid var(--border); }
+  .btn-ghost:hover { color: var(--text); border-color: var(--accent); }
+  .videos-list { display: flex; flex-direction: column; gap: 16px; }
+  .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; overflow: hidden; transition: border-color 0.2s; }
+  .video-card:hover { border-color: rgba(108,99,255,0.4); }
+  .video-card-header { padding: 20px 24px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; background: var(--surface2); }
+  .video-info { display: flex; align-items: center; gap: 14px; }
+  .video-thumb { width: 48px; height: 48px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+  .video-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+  .video-meta { font-size: 12px; color: var(--text-muted); display: flex; gap: 12px; }
+  .video-actions { display: flex; gap: 8px; align-items: center; }
+  .badge { font-size: 11px; font-weight: 700; padding: 4px 10px; border-radius: 20px; }
+  .badge-active { background: rgba(67,233,123,0.15); color: var(--accent3); border: 1px solid rgba(67,233,123,0.3); }
+  .badge-paused { background: rgba(107,107,138,0.2); color: var(--text-muted); border: 1px solid var(--border); }
+  .expand-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 18px; padding: 4px 8px; transition: transform 0.3s; }
+  .expand-btn.open { transform: rotate(180deg); }
+  .video-body { padding: 24px; display: none; border-top: 1px solid var(--border); }
+  .video-body.open { display: block; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 700; color: var(--text-muted); margin-bottom: 8px; display: block; }
+  .form-input, .form-textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px; transition: border-color 0.2s; outline: none; resize: vertical; }
+  .form-input:focus, .form-textarea:focus { border-color: var(--accent); }
+  .hint { font-size: 11px; color: var(--text-muted); margin-top: 4px; }
+  .replies-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 8px; }
+  .reply-input-wrap { position: relative; }
+  .reply-num { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 10px; font-weight: 700; color: var(--accent); background: rgba(108,99,255,0.15); padding: 2px 6px; border-radius: 6px; }
+  .reply-input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 10px; padding: 10px 50px 10px 16px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 13px; outline: none; transition: border-color 0.2s; }
+  .reply-input:focus { border-color: var(--accent); }
+  .form-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .dm-box { background: var(--bg); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .dm-box:focus-within { border-color: var(--accent); }
+  .dm-textarea { width: 100%; background: transparent; border: none; padding: 14px 16px; color: var(--text); font-family: 'Cairo', sans-serif; font-size: 14px; outline: none; resize: vertical; min-height: 100px; }
+  .dm-toolbar { display: flex; align-items: center; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--border); background: var(--surface2); }
+  .attach-btn { display: flex; align-items: center; gap: 6px; padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface); color: var(--text-muted); font-family: 'Cairo', sans-serif; font-size: 12px; font-weight: 700; cursor: pointer; transition: all 0.2s; }
+  .attach-btn:hover { color: var(--text); border-color: var(--accent); }
+  .attach-preview { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 14px; }
+  .attach-item { display: flex; align-items: center; gap: 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 6px 10px; font-size: 12px; max-width: 200px; }
+  .attach-thumb { width: 32px; height: 32px; border-radius: 6px; object-fit: cover; flex-shrink: 0; }
+  .attach-name { font-size: 11px; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+  .attach-remove { background: none; border: none; color: var(--accent2); cursor: pointer; font-size: 14px; padding: 0 2px; flex-shrink: 0; }
+  .attach-icon { font-size: 24px; flex-shrink: 0; }
+  .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 1000; display: none; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 20px; padding: 32px; width: 580px; max-width: 90vw; max-height: 85vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+  @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .modal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 28px; }
+  .modal-title { font-size: 20px; font-weight: 900; }
+  .modal-close { background: none; border: none; color: var(--text-muted); font-size: 22px; cursor: pointer; }
+  .modal-close:hover { color: var(--text); }
+  .empty-state { text-align: center; padding: 60px 20px; color: var(--text-muted); }
+  .empty-state .icon { font-size: 48px; margin-bottom: 16px; }
+  .empty-state h3 { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: var(--text); }
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(80px); background: var(--surface2); border: 1px solid var(--accent); color: var(--text); padding: 14px 24px; border-radius: 12px; font-size: 14px; font-weight: 600; z-index: 9999; transition: transform 0.3s ease; }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .loading { text-align: center; padding: 40px; color: var(--text-muted); font-size: 14px; }
+  ::-webkit-scrollbar { width: 6px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+  @media (max-width: 768px) { .sidebar { display: none; } .main { margin-right: 0; padding: 20px; } .stats-grid { grid-template-columns: 1fr; } .form-grid { grid-template-columns: 1fr; } .replies-grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="logo">بوت ردود 🤖<span>لوحة التحكم</span></div>
+  <div class="nav-item active"><span class="icon">🎬</span> الفيديوهات والردود</div>
+  <div class="bot-status">
+    <div class="status-row">
+      <span class="status-label">⚡ البوت</span>
+      <div class="toggle on" id="mainToggle" onclick="this.classList.toggle('on')"></div>
+    </div>
+    <div class="platform-pills">
+      <span class="pill fb">📘 فيسبوك</span>
+      <span class="pill ig">📷 انستا</span>
+    </div>
+  </div>
+</aside>
+
+<main class="main">
+  <div class="page-header">
+    <div>
+      <div class="page-title">الفيديوهات والردود</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:6px;">اضبط الردود لكل فيديو بشكل مستقل</div>
+    </div>
+    <button class="btn btn-primary" onclick="openModal()">+ إضافة فيديو</button>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-card"><span class="stat-icon">💬</span><div class="stat-value" id="totalReplies">0</div><div class="stat-label">إجمالي الردود</div></div>
+    <div class="stat-card"><span class="stat-icon">📘</span><div class="stat-value" id="videoCount">0</div><div class="stat-label">عدد الفيديوهات</div></div>
+    <div class="stat-card"><span class="stat-icon">🟢</span><div class="stat-value" id="activeCount">0</div><div class="stat-label">فيديوهات نشطة</div></div>
+  </div>
+
+  <div class="section-header">
+    <div class="section-title">🎬 الفيديوهات</div>
+  </div>
+  <div class="videos-list" id="videosList"><div class="loading">⏳ جاري التحميل...</div></div>
+</main>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">➕ إضافة فيديو جديد</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">اسم الفيديو</label>
+      <input class="form-input" id="newVideoName" placeholder="مثال: فيديو العرض الخاص - مايو" />
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">المنصة</label>
+      <select class="form-input" id="newVideoPlatform" onchange="updateUrlFields()">
+        <option value="both">فيسبوك + انستا</option>
+        <option value="fb">فيسبوك فقط</option>
+        <option value="ig">انستا فقط</option>
+      </select>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group" id="urlFieldFb">
+        <label class="form-label">📘 رابط فيسبوك</label>
+        <input class="form-input" id="newVideoUrlFb" placeholder="https://facebook.com/reel/..." />
+      </div>
+      <div class="form-group" id="urlFieldIg">
+        <label class="form-label">📷 رابط انستا</label>
+        <input class="form-input" id="newVideoUrlIg" placeholder="https://instagram.com/reel/..." />
+      </div>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group" id="fbPostIdField">
+        <label class="form-label">🔑 Facebook Post ID</label>
+        <input class="form-input" id="newFbPostId" placeholder="مثال: 123456789" />
+        <div class="hint">⚠️ من رابط الفيديو، الأرقام اللي بعد /reel/ أو /videos/</div>
+      </div>
+      <div class="form-group" id="igMediaIdField">
+        <label class="form-label">🔑 Instagram Media ID</label>
+        <input class="form-input" id="newIgMediaId" placeholder="مثال: 17854360229135492" />
+        <div class="hint">⚠️ رقم الـ ID الخاص بالريل من انستا</div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">ردود التعليقات العشوائية (5 ردود)</label>
+      <div class="replies-grid" id="newRepliesGrid">
+        <div class="reply-input-wrap"><input class="reply-input" placeholder="الرد الأول..." /><span class="reply-num">١</span></div>
+        <div class="reply-input-wrap"><input class="reply-input" placeholder="الرد الثاني..." /><span class="reply-num">٢</span></div>
+        <div class="reply-input-wrap"><input class="reply-input" placeholder="الرد الثالث..." /><span class="reply-num">٣</span></div>
+        <div class="reply-input-wrap"><input class="reply-input" placeholder="الرد الرابع..." /><span class="reply-num">٤</span></div>
+        <div class="reply-input-wrap" style="grid-column:span 2"><input class="reply-input" placeholder="الرد الخامس..." /><span class="reply-num">٥</span></div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">📩 رسالة DM (المرفقات أولاً، الرسالة آخراً)</label>
+      <div class="dm-box">
+        <textarea class="dm-textarea" id="newVideoDM" placeholder="اكتب الرسالة... يمكنك إضافة إيموجي ولينكات 🔥"></textarea>
+        <div class="attach-preview" id="newAttachPreview"></div>
+        <div class="dm-toolbar">
+          <label class="attach-btn">🖼 صورة<input type="file" accept="image/*" multiple style="display:none" onchange="handleAttach(event,'new','image')"></label>
+          <label class="attach-btn">🎥 فيديو<input type="file" accept="video/*" style="display:none" onchange="handleAttach(event,'new','video')"></label>
+          <label class="attach-btn">📎 ملف<input type="file" accept=".pdf,.doc,.docx,.zip" style="display:none" onchange="handleAttach(event,'new','file')"></label>
+          <span style="font-size:11px;color:var(--text-muted);margin-right:auto;">حتى 3 مرفقات • تُرسل قبل الرسالة</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+      <button class="btn btn-primary" onclick="addVideo()">✅ حفظ الفيديو</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+let newAttachments = [];
+
+function updateUrlFields() {
+  const p = document.getElementById('newVideoPlatform').value;
+  document.getElementById('urlFieldFb').style.display = p === 'ig' ? 'none' : 'block';
+  document.getElementById('urlFieldIg').style.display = p === 'fb' ? 'none' : 'block';
+  document.getElementById('fbPostIdField').style.display = p === 'ig' ? 'none' : 'block';
+  document.getElementById('igMediaIdField').style.display = p === 'fb' ? 'none' : 'block';
+}
+
+async function loadVideos() {
+  try {
+    const res = await fetch('/api/videos');
+    const videos = await res.json();
+    renderVideos(videos);
+    updateStats(videos);
+  } catch (e) {
+    document.getElementById('videosList').innerHTML = '<div class="empty-state"><div class="icon">⚠️</div><h3>خطأ في الاتصال</h3><p>تأكد من تشغيل السيرفر</p></div>';
+  }
+}
+
+function updateStats(videos) {
+  const total = videos.reduce((s, v) => s + (v.replies || 0), 0);
+  document.getElementById('totalReplies').textContent = total;
+  document.getElementById('videoCount').textContent = videos.length;
+  document.getElementById('activeCount').textContent = videos.filter(v => v.active).length;
+}
+
+function renderVideos(videos) {
+  const list = document.getElementById('videosList');
+  if (!videos.length) {
+    list.innerHTML = '<div class="empty-state"><div class="icon">🎬</div><h3>مفيش فيديوهات لسه</h3><p>اضغط "إضافة فيديو" عشان تبدأ</p></div>';
+    return;
+  }
+  list.innerHTML = videos.map(v => `
+    <div class="video-card" id="card-${v.id}">
+      <div class="video-card-header" onclick="toggleCard(${v.id})">
+        <div class="video-info">
+          <div class="video-thumb">🎬</div>
+          <div>
+            <div class="video-name">${v.name}</div>
+            <div class="video-meta">
+              <span>${v.platform === 'both' ? '📘📷' : v.platform === 'fb' ? '📘' : '📷'}</span>
+              <span>💬 ${v.replies || 0} رد</span>
+            </div>
+          </div>
+        </div>
+        <div class="video-actions">
+          <span class="badge ${v.active ? 'badge-active' : 'badge-paused'}">${v.active ? '🟢 نشط' : '⏸ متوقف'}</span>
+          <button class="btn btn-ghost" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();toggleActive(${v.id},${!v.active})">${v.active ? 'إيقاف' : 'تشغيل'}</button>
+          <button class="btn btn-danger" style="padding:6px 12px;font-size:12px" onclick="event.stopPropagation();deleteVideo(${v.id})">🗑</button>
+          <button class="expand-btn" id="expand-${v.id}">▼</button>
+        </div>
+      </div>
+      <div class="video-body" id="body-${v.id}">
+        <div class="form-grid">
+          ${v.platform !== 'ig' ? `<div class="form-group"><label class="form-label">📘 Facebook Post ID</label><input class="form-input" value="${v.fbPostId||''}" onchange="fieldChange(${v.id},'fbPostId',this.value)" /></div>` : ''}
+          ${v.platform !== 'fb' ? `<div class="form-group"><label class="form-label">📷 Instagram Media ID</label><input class="form-input" value="${v.igMediaId||''}" onchange="fieldChange(${v.id},'igMediaId',this.value)" /></div>` : ''}
+        </div>
+        <div class="form-group">
+          <label class="form-label">ردود التعليقات العشوائية</label>
+          <div class="replies-grid">
+            ${(v.commentReplies||['','','','','']).map((r,i) => `
+              <div class="reply-input-wrap" ${i===4?'style="grid-column:span 2"':''}>
+                <input class="reply-input" value="${r}" onchange="replyChange(${v.id},${i},this.value)" placeholder="الرد ${i+1}..."/>
+                <span class="reply-num">${['١','٢','٣','٤','٥'][i]}</span>
+              </div>`).join('')}
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">📩 رسالة DM (المرفقات تُرسل أولاً)</label>
+          <div class="dm-box">
+            <textarea class="dm-textarea" onchange="fieldChange(${v.id},'dm',this.value)">${v.dm||''}</textarea>
+            <div class="attach-preview" id="attPrev-${v.id}">
+              ${renderAttachments(v.attachments||[], v.id)}
+            </div>
+            <div class="dm-toolbar">
+              <label class="attach-btn">🖼 صورة<input type="file" accept="image/*" multiple style="display:none" onchange="handleAttach(event,${v.id},'image')"></label>
+              <label class="attach-btn">🎥 فيديو<input type="file" accept="video/*" style="display:none" onchange="handleAttach(event,${v.id},'video')"></label>
+              <label class="attach-btn">📎 ملف<input type="file" accept=".pdf,.doc,.docx,.zip" style="display:none" onchange="handleAttach(event,${v.id},'file')"></label>
+              <span style="font-size:11px;color:var(--text-muted);margin-right:auto;">حتى 3 • تُرسل قبل الرسالة</span>
+            </div>
+          </div>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" onclick="saveVideo(${v.id})">💾 حفظ التعديلات</button>
+        </div>
+      </div>
+    </div>`).join('');
+}
+
+function renderAttachments(attachments, id) {
+  return (attachments||[]).map((a,i) => `
+    <div class="attach-item">
+      ${a.type==='image' ? `<img class="attach-thumb" src="${a.url||a.dataUrl}" />` : `<span class="attach-icon">${a.type==='video'?'🎥':'📄'}</span>`}
+      <span class="attach-name">${a.name}</span>
+      <button class="attach-remove" onclick="removeAttach('${id}',${i})">✕</button>
+    </div>`).join('');
+}
+
+let pendingChanges = {};
+
+function fieldChange(id, field, value) {
+  if (!pendingChanges[id]) pendingChanges[id] = {};
+  pendingChanges[id][field] = value;
+}
+
+function replyChange(id, idx, value) {
+  if (!pendingChanges[id]) pendingChanges[id] = {};
+  // We'll gather all replies on save
+}
+
+function toggleCard(id) {
+  document.getElementById(`body-${id}`).classList.toggle('open');
+  document.getElementById(`expand-${id}`).classList.toggle('open');
+}
+
+async function toggleActive(id, active) {
+  await fetch(`/api/videos/${id}`, { method: 'PUT', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ active }) });
+  showToast(active ? '✅ تم التشغيل' : '⏸ تم الإيقاف');
+  loadVideos();
+}
+
+async function deleteVideo(id) {
+  if (!confirm('هتحذف الفيديو ده؟')) return;
+  await fetch(`/api/videos/${id}`, { method: 'DELETE' });
+  showToast('🗑 تم الحذف');
+  loadVideos();
+}
+
+async function saveVideo(id) {
+  const body = document.getElementById(`body-${id}`);
+  const replies = [...body.querySelectorAll('.reply-input')].map(i => i.value.trim());
+  const dm = body.querySelector('.dm-textarea').value;
+  const fbPostId = body.querySelector('input[onchange*="fbPostId"]')?.value || '';
+  const igMediaId = body.querySelector('input[onchange*="igMediaId"]')?.value || '';
+  const changes = pendingChanges[id] || {};
+  await fetch(`/api/videos/${id}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ ...changes, commentReplies: replies, dm, fbPostId, igMediaId })
+  });
+  delete pendingChanges[id];
+  showToast('💾 تم الحفظ');
+  loadVideos();
+}
+
+function openModal() {
+  document.getElementById('modalOverlay').classList.add('open');
+  ['newVideoName','newVideoUrlFb','newVideoUrlIg','newVideoDM','newFbPostId','newIgMediaId'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = '';
+  });
+  document.getElementById('newVideoPlatform').value = 'both';
+  updateUrlFields();
+  document.querySelectorAll('#newRepliesGrid .reply-input').forEach(i => i.value = '');
+  newAttachments = [];
+  document.getElementById('newAttachPreview').innerHTML = '';
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('open'); }
+function closeModalOutside(e) { if (e.target === document.getElementById('modalOverlay')) closeModal(); }
+
+async function addVideo() {
+  const name = document.getElementById('newVideoName').value.trim();
+  if (!name) { alert('اكتب اسم الفيديو!'); return; }
+  const replies = [...document.querySelectorAll('#newRepliesGrid .reply-input')].map(i => i.value.trim());
+  if (!replies.some(r => r)) { alert('اكتب رد واحد على الأقل!'); return; }
+  const platform = document.getElementById('newVideoPlatform').value;
+  const video = {
+    name,
+    platform,
+    urlFb: document.getElementById('newVideoUrlFb')?.value.trim() || '',
+    urlIg: document.getElementById('newVideoUrlIg')?.value.trim() || '',
+    fbPostId: document.getElementById('newFbPostId')?.value.trim() || '',
+    igMediaId: document.getElementById('newIgMediaId')?.value.trim() || '',
+    commentReplies: replies,
+    dm: document.getElementById('newVideoDM').value.trim(),
+    attachments: newAttachments
+  };
+  const btn = document.querySelector('.modal .btn-primary');
+  btn.textContent = '⏳ جاري الحفظ...';
+  btn.disabled = true;
+  await fetch('/api/videos', { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(video) });
+  btn.textContent = '✅ حفظ الفيديو';
+  btn.disabled = false;
+  closeModal();
+  showToast('✅ تم إضافة الفيديو');
+  loadVideos();
+}
+
+function handleAttach(event, id, type) {
+  const files = [...event.target.files];
+  const isNew = id === 'new';
+  files.forEach(file => {
+    const arr = isNew ? newAttachments : [];
+    if (arr.length >= 3 || (!isNew && document.querySelectorAll(`#attPrev-${id} .attach-item`).length >= 3)) {
+      showToast('⚠️ الحد الأقصى 3 مرفقات'); return;
+    }
+    const reader = new FileReader();
+    reader.onload = e => {
+      const obj = { name: file.name, type, dataUrl: e.target.result };
+      if (isNew) {
+        newAttachments.push(obj);
+        document.getElementById('newAttachPreview').innerHTML = renderAttachments(newAttachments, 'new');
+      } else {
+        if (!pendingChanges[id]) pendingChanges[id] = {};
+        if (!pendingChanges[id].attachments) pendingChanges[id].attachments = [];
+        pendingChanges[id].attachments.push(obj);
+        document.getElementById(`attPrev-${id}`).innerHTML = renderAttachments(pendingChanges[id].attachments, id);
+      }
+    };
+    reader.readAsDataURL(file);
+  });
+  event.target.value = '';
+}
+
+function removeAttach(id, idx) {
+  if (id === 'new') {
+    newAttachments.splice(idx, 1);
+    document.getElementById('newAttachPreview').innerHTML = renderAttachments(newAttachments, 'new');
+  }
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+loadVideos();
+</script>
+</body>
+</html>
